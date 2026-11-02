@@ -1,7 +1,6 @@
 # faultforge-target
 
-A tiny fictional booking API. It is the codebase that [FaultForge](https://github.com/AJBeumer/FaultForge)
-exercises and that Qodo reviews. It is deliberately small and is not a product.
+A tiny fictional booking API. It is deliberately small and is not a product.
 
 ## Run
 
