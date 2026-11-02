@@ -30,7 +30,7 @@ export function createBooking(
         message: "this Idempotency-Key was already used for a different request",
       };
     }
-    const original = deps.store.getBooking(previous.bookingId);
+    const original = deps.store.getBooking(idempotencyKey);
     if (original) {
       return { kind: "replayed", booking: original };
     }
