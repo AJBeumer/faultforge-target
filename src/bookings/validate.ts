@@ -1,4 +1,4 @@
-import { MAX_NIGHTS, findResource } from "../fixtures.ts";
+import { findResource, MAX_NIGHTS } from "../fixtures.ts";
 import type { BookingRequest } from "./types.ts";
 
 export type ValidationError =

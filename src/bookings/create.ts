@@ -1,6 +1,6 @@
 import type { Deps } from "../deps.ts";
 import type { Booking, BookingRequest } from "./types.ts";
-import { validateBooking, type ValidationError } from "./validate.ts";
+import { type ValidationError, validateBooking } from "./validate.ts";
 
 export type CreateBookingResult =
   | { kind: "created"; booking: Booking }
@@ -64,11 +64,5 @@ export function createBooking(
 
 /** Stable representation of the fields that define a booking request. */
 function fingerprintRequest(input: BookingRequest): string {
-  return JSON.stringify([
-    input.resourceId,
-    input.startDate,
-    input.endDate,
-    input.guests,
-    input.note ?? null,
-  ]);
+  return JSON.stringify([input.resourceId, input.startDate, input.endDate, input.guests, input.note ?? null]);
 }

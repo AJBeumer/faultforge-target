@@ -7,6 +7,7 @@ A tiny fictional booking API. It is deliberately small and is not a product.
 ```bash
 npm install
 npm test          # application tests
+npm run check     # typecheck, lint and tests
 npm start         # http://127.0.0.1:3000
 ```
 

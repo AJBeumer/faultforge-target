@@ -51,12 +51,7 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
     "/bookings",
     { schema: { body: bookingRequestSchema, headers: createHeadersSchema } },
     async (request, reply) => {
-      const result = createBooking(
-        deps,
-        request.userId,
-        request.headers["idempotency-key"],
-        request.body,
-      );
+      const result = createBooking(deps, request.userId, request.headers["idempotency-key"], request.body);
 
       switch (result.kind) {
         case "created":
