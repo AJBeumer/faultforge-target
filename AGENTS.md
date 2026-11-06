@@ -46,12 +46,15 @@ Tests live in `test/`. A change in behaviour comes with a test that shows it.
 
 ### 3. Check the whole request before touching the store
 
-- **Rule:** reject bad input before any write. Request schemas keep
-  `additionalProperties: false`, so unknown fields are refused, not ignored. Business limits
-  (dates, nights, guests) are checked in `src/bookings/validate.ts` before a booking or an
-  idempotency record is saved.
-- **Applies to:** route schemas in `src/bookings/routes.ts`, `src/bookings/validate.ts`, and
-  the order of steps in `src/bookings/create.ts`.
+- **Rule:** reject bad input before any write. Every route that changes state checks its whole
+  input, including routes that take no body. Request schemas keep
+  `additionalProperties: false`, so unknown fields are refused, not ignored. A route that takes
+  no body refuses a body that has fields, checked after authentication so callers who aren't
+  logged in still get `401`. Business limits (dates, nights, guests) are checked in
+  `src/bookings/validate.ts` before a booking or an idempotency record is saved.
+- **Applies to:** every route that changes state in `src/bookings/routes.ts`,
+  `src/bookings/validate.ts`, and the order of steps in `src/bookings/create.ts` and
+  `src/bookings/cancel.ts`.
 - **Why:** a request that fails halfway must leave no trace. A stray record or half-saved
   booking changes how later requests behave (INV-VALID-001, INV-BOUND-001).
 
