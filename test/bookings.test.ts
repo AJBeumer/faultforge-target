@@ -144,3 +144,84 @@ describe("GET /bookings/:id", () => {
     expect(res.statusCode).toBe(404);
   });
 });
+
+describe("POST /bookings/:id/cancel", () => {
+  function cancel(app: ReturnType<typeof setup>, id: string, userId = "user-alice") {
+    return app.inject({ method: "POST", url: `/bookings/${id}/cancel`, headers: { "x-user-id": userId } });
+  }
+
+  function get(app: ReturnType<typeof setup>, id: string, userId = "user-alice") {
+    return app.inject({ method: "GET", url: `/bookings/${id}`, headers: { "x-user-id": userId } });
+  }
+
+  it("cancels the caller's own booking", async () => {
+    const app = setup();
+    const created = (await post(app, validBooking)).json();
+    const res = await cancel(app, created.id);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ ...created, status: "cancelled" });
+    expect((await get(app, created.id)).json().status).toBe("cancelled");
+  });
+
+  it("changes nothing when the booking is already cancelled", async () => {
+    const app = setup();
+    const created = (await post(app, validBooking)).json();
+    const first = await cancel(app, created.id);
+    const second = await cancel(app, created.id);
+
+    expect(second.statusCode).toBe(200);
+    expect(second.json()).toEqual(first.json());
+  });
+
+  it("treats another user's booking exactly like a missing one", async () => {
+    const app = setup();
+    const created = (await post(app, validBooking)).json();
+    const other = await cancel(app, created.id, "user-bob");
+    const missing = await cancel(app, "bk_9999", "user-bob");
+
+    expect(other.statusCode).toBe(404);
+    expect(other.json()).toEqual(missing.json());
+    expect((await get(app, created.id)).json().status).toBe("confirmed");
+  });
+
+  it("returns 404 for a missing booking", async () => {
+    const app = setup();
+    const res = await cancel(app, "bk_9999");
+
+    expect(res.statusCode).toBe(404);
+    expect(res.json()).toEqual({ error: "not_found", message: "booking not found" });
+  });
+
+  it("rejects unauthenticated callers", async () => {
+    const app = setup();
+    const created = (await post(app, validBooking)).json();
+    const res = await cancel(app, created.id, "mallory");
+
+    expect(res.statusCode).toBe(401);
+    expect((await get(app, created.id)).json().status).toBe("confirmed");
+  });
+
+  it("rejects a request without x-user-id", async () => {
+    const app = setup();
+    const created = (await post(app, validBooking)).json();
+    const res = await app.inject({ method: "POST", url: `/bookings/${created.id}/cancel` });
+
+    expect(res.statusCode).toBe(401);
+    expect((await get(app, created.id)).json().status).toBe("confirmed");
+  });
+
+  it("rejects a request body and leaves the booking unchanged", async () => {
+    const app = setup();
+    const created = (await post(app, validBooking)).json();
+    const res = await app.inject({
+      method: "POST",
+      url: `/bookings/${created.id}/cancel`,
+      headers: { "x-user-id": "user-alice" },
+      payload: { reason: "changed plans" },
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect((await get(app, created.id)).json().status).toBe("confirmed");
+  });
+});

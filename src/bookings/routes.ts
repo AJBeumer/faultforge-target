@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { Deps } from "../deps.ts";
 import { isKnownUser } from "../fixtures.ts";
+import { cancelBooking } from "./cancel.ts";
 import { createBooking } from "./create.ts";
 import type { BookingRequest } from "./types.ts";
 
@@ -72,8 +73,30 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
     const booking = deps.store.getBooking(request.params.id);
     // Someone else's booking is reported as missing so its existence does not leak.
     if (!booking || booking.userId !== request.userId) {
-      return reply.code(404).send({ error: "not_found", message: "booking not found" });
+      return notFound(reply);
     }
     return booking;
   });
+
+  app.post<{ Params: { id: string } }>("/bookings/:id/cancel", async (request, reply) => {
+    // Cancelling takes no input, so any field in a body is unknown. Checked here rather than
+    // with a body schema, which would also refuse bodyless requests and run before authentication.
+    if (!isEmptyBody(request.body)) {
+      return reply.code(400).send({ error: "invalid_request", message: "this request takes no body" });
+    }
+    const result = cancelBooking(deps, request.userId, request.params.id);
+    if (result.kind === "not_found") {
+      return notFound(reply);
+    }
+    return result.booking;
+  });
+}
+
+function isEmptyBody(body: unknown): boolean {
+  return body === undefined || body === null || (typeof body === "object" && Object.keys(body).length === 0);
+}
+
+/** The one response for a booking the caller can't see, whether it is missing or someone else's. */
+function notFound(reply: FastifyReply) {
+  return reply.code(404).send({ error: "not_found", message: "booking not found" });
 }
