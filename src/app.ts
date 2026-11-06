@@ -13,13 +13,14 @@ export function buildApp(options: AppOptions = {}) {
   const app = Fastify({ ajv: { customOptions: { removeAdditional: false } }, ...options.fastify });
 
   // Many clients send `Content-Type: application/json` on every request, even without a body. Treat
-  // an empty body as no body, so a route that takes none still works and authentication still runs
-  // first. Anything else goes through Fastify's own JSON parser, with its protections.
+  // a body of zero length as no body, so a route that takes none still works and authentication still
+  // runs first. Anything else, whitespace included, goes through Fastify's own JSON parser, with its
+  // protections, and is rejected if it isn't valid JSON.
   const parseJson = app.getDefaultJsonParser("error", "error");
   app.removeContentTypeParser("application/json");
   app.addContentTypeParser("application/json", { parseAs: "string" }, (request, body, done) => {
     const text = typeof body === "string" ? body : body.toString("utf8");
-    if (text.trim() === "") return done(null, undefined);
+    if (text.length === 0) return done(null, undefined);
     parseJson(request, text, done);
   });
 

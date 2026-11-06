@@ -345,6 +345,25 @@ describe("cancel with a JSON content type and no body", () => {
     expect(res.statusCode).toBe(400);
   });
 
+  it("rejects a body of only whitespace and leaves the booking unchanged", async () => {
+    const app = setup();
+    const booking = await created(app);
+    const res = await cancelWith(
+      app,
+      booking.id,
+      { "x-user-id": "user-alice", "content-type": "application/json" },
+      "  \n",
+    );
+    const after = await app.inject({
+      method: "GET",
+      url: `/bookings/${booking.id}`,
+      headers: { "x-user-id": "user-alice" },
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(after.json().status).toBe("confirmed");
+  });
+
   it("still rejects a malformed JSON body", async () => {
     const app = setup();
     const booking = await created(app);
