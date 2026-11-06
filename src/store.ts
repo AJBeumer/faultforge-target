@@ -16,6 +16,11 @@ export class BookingStore {
     this.bookings.set(booking.id, booking);
   }
 
+  /** A user's bookings in the order they were created. Saving a booking again keeps its place. */
+  listBookings(userId: string): Booking[] {
+    return [...this.bookings.values()].filter((booking) => booking.userId === userId);
+  }
+
   countBookings(): number {
     return this.bookings.size;
   }
