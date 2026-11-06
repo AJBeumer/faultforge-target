@@ -35,6 +35,6 @@ Resources: `room-101` (2 guests), `room-102` (4 guests), `studio-a` (8 guests).
 ## Design
 
 - In-memory store, one per app instance. Clock and id generator are injected so tests are deterministic.
-- Business rules are listed in [INVARIANTS.md](INVARIANTS.md).
+- Business rules are listed in [INVARIANTS.md](INVARIANTS.md). Rules for contributors and reviewers are in [AGENTS.md](AGENTS.md).
 
 Stack: TypeScript, Node.js 22+, Fastify, Vitest.
