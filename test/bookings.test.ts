@@ -201,4 +201,27 @@ describe("POST /bookings/:id/cancel", () => {
     expect(res.statusCode).toBe(401);
     expect((await get(app, created.id)).json().status).toBe("confirmed");
   });
+
+  it("rejects a request without x-user-id", async () => {
+    const app = setup();
+    const created = (await post(app, validBooking)).json();
+    const res = await app.inject({ method: "POST", url: `/bookings/${created.id}/cancel` });
+
+    expect(res.statusCode).toBe(401);
+    expect((await get(app, created.id)).json().status).toBe("confirmed");
+  });
+
+  it("rejects a request body and leaves the booking unchanged", async () => {
+    const app = setup();
+    const created = (await post(app, validBooking)).json();
+    const res = await app.inject({
+      method: "POST",
+      url: `/bookings/${created.id}/cancel`,
+      headers: { "x-user-id": "user-alice" },
+      payload: { reason: "changed plans" },
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect((await get(app, created.id)).json().status).toBe("confirmed");
+  });
 });

@@ -79,12 +79,21 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
   });
 
   app.post<{ Params: { id: string } }>("/bookings/:id/cancel", async (request, reply) => {
+    // Cancelling takes no input, so any field in a body is unknown. Checked here rather than
+    // with a body schema, which would also refuse bodyless requests and run before authentication.
+    if (!isEmptyBody(request.body)) {
+      return reply.code(400).send({ error: "invalid_request", message: "this request takes no body" });
+    }
     const result = cancelBooking(deps, request.userId, request.params.id);
     if (result.kind === "not_found") {
       return notFound(reply);
     }
     return result.booking;
   });
+}
+
+function isEmptyBody(body: unknown): boolean {
+  return body === undefined || body === null || (typeof body === "object" && Object.keys(body).length === 0);
 }
 
 /** The one response for a booking the caller can't see, whether it is missing or someone else's. */
