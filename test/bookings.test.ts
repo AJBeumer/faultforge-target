@@ -335,3 +335,93 @@ describe("cancel checks the login before the request body", () => {
     expect(await statusOf(app, booking.id)).toBe("confirmed");
   });
 });
+
+describe("cancel with a JSON content type and no body", () => {
+  async function created(app: ReturnType<typeof setup>) {
+    return (await post(app, validBooking)).json();
+  }
+
+  function cancelWith(app: ReturnType<typeof setup>, id: string, headers: Record<string, string>, payload?: string) {
+    return app.inject({ method: "POST", url: `/bookings/${id}/cancel`, headers, payload });
+  }
+
+  it("cancels the owner's booking", async () => {
+    const app = setup();
+    const booking = await created(app);
+    const res = await cancelWith(app, booking.id, { "x-user-id": "user-alice", "content-type": "application/json" });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().status).toBe("cancelled");
+  });
+
+  it("still refuses a body with fields and leaves the booking unchanged", async () => {
+    const app = setup();
+    const booking = await created(app);
+    const res = await cancelWith(
+      app,
+      booking.id,
+      { "x-user-id": "user-alice", "content-type": "application/json" },
+      '{"reason":"x"}',
+    );
+    const after = await app.inject({
+      method: "GET",
+      url: `/bookings/${booking.id}`,
+      headers: { "x-user-id": "user-alice" },
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(after.json().status).toBe("confirmed");
+  });
+
+  it("still gives 401 without a valid user, with or without a body", async () => {
+    const app = setup();
+    const booking = await created(app);
+    const json = { "content-type": "application/json" };
+
+    expect((await cancelWith(app, booking.id, json)).statusCode).toBe(401);
+    expect((await cancelWith(app, booking.id, json, '{"reason":"x"}')).statusCode).toBe(401);
+  });
+
+  it("still refuses an empty JSON body when creating a booking", async () => {
+    const app = setup();
+    const res = await app.inject({
+      method: "POST",
+      url: "/bookings",
+      headers: { "x-user-id": "user-alice", "idempotency-key": "k", "content-type": "application/json" },
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("rejects a body of only whitespace and leaves the booking unchanged", async () => {
+    const app = setup();
+    const booking = await created(app);
+    const res = await cancelWith(
+      app,
+      booking.id,
+      { "x-user-id": "user-alice", "content-type": "application/json" },
+      "  \n",
+    );
+    const after = await app.inject({
+      method: "GET",
+      url: `/bookings/${booking.id}`,
+      headers: { "x-user-id": "user-alice" },
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(after.json().status).toBe("confirmed");
+  });
+
+  it("still rejects a malformed JSON body", async () => {
+    const app = setup();
+    const booking = await created(app);
+    const res = await cancelWith(
+      app,
+      booking.id,
+      { "x-user-id": "user-alice", "content-type": "application/json" },
+      "{",
+    );
+
+    expect(res.statusCode).toBe(400);
+  });
+});
