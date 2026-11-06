@@ -1,7 +1,7 @@
 {
   "name": "faultforge-target",
   "version": "1.0.0",
-  "description": "Tiny fictional booking API used as the FaultForge target",
+  "description": "Tiny fictional booking API",
   "scripts": {
     "test": "vitest run",
     "dev": "tsx watch src/server.ts",
