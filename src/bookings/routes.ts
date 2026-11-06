@@ -3,6 +3,7 @@ import type { Deps } from "../deps.ts";
 import { isKnownUser } from "../fixtures.ts";
 import { cancelBooking } from "./cancel.ts";
 import { createBooking } from "./create.ts";
+import { listBookings } from "./list.ts";
 import type { BookingRequest } from "./types.ts";
 
 const bookingRequestSchema = {
@@ -68,6 +69,8 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
       }
     },
   );
+
+  app.get("/bookings", async (request) => listBookings(deps, request.userId));
 
   app.get<{ Params: { id: string } }>("/bookings/:id", async (request, reply) => {
     const booking = deps.store.getBooking(request.params.id);

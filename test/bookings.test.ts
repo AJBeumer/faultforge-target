@@ -225,3 +225,65 @@ describe("POST /bookings/:id/cancel", () => {
     expect((await get(app, created.id)).json().status).toBe("confirmed");
   });
 });
+
+describe("GET /bookings", () => {
+  function list(app: ReturnType<typeof setup>, userId = "user-alice") {
+    return app.inject({ method: "GET", url: "/bookings", headers: { "x-user-id": userId } });
+  }
+
+  async function book(app: ReturnType<typeof setup>, key: string, userId = "user-alice") {
+    return (await post(app, validBooking, { "idempotency-key": key, "x-user-id": userId })).json();
+  }
+
+  it("returns the caller's bookings, newest first", async () => {
+    let tick = 0;
+    const app = buildApp({ deps: { clock: { now: () => new Date(Date.parse(NOW) + tick++ * 60_000) } } });
+    const first = await book(app, "a");
+    const second = await book(app, "b");
+    const third = await book(app, "c");
+    const res = await list(app);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().map((b: { id: string }) => b.id)).toEqual([third.id, second.id, first.id]);
+  });
+
+  it("keeps creation order, newest first, when bookings share a timestamp", async () => {
+    const app = setup();
+    const first = await book(app, "a");
+    const second = await book(app, "b");
+
+    expect((await list(app)).json().map((b: { id: string }) => b.id)).toEqual([second.id, first.id]);
+  });
+
+  it("never includes other users' bookings", async () => {
+    const app = setup();
+    const mine = await book(app, "a");
+    await book(app, "a", "user-bob");
+
+    expect((await list(app)).json()).toEqual([mine]);
+  });
+
+  it("returns an empty list when there are none", async () => {
+    const app = setup();
+    await book(app, "a", "user-bob");
+    const res = await list(app);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual([]);
+  });
+
+  it("includes cancelled bookings with their status", async () => {
+    const app = setup();
+    const created = await book(app, "a");
+    await app.inject({ method: "POST", url: `/bookings/${created.id}/cancel`, headers: { "x-user-id": "user-alice" } });
+
+    expect((await list(app)).json()).toEqual([{ ...created, status: "cancelled" }]);
+  });
+
+  it("rejects unauthenticated callers", async () => {
+    const app = setup();
+    const res = await app.inject({ method: "GET", url: "/bookings" });
+
+    expect(res.statusCode).toBe(401);
+  });
+});
