@@ -287,3 +287,51 @@ describe("GET /bookings", () => {
     expect(res.statusCode).toBe(401);
   });
 });
+
+describe("cancel checks the login before the request body", () => {
+  async function booked(app: ReturnType<typeof setup>) {
+    return (await post(app, validBooking)).json();
+  }
+
+  async function statusOf(app: ReturnType<typeof setup>, id: string) {
+    const res = await app.inject({ method: "GET", url: `/bookings/${id}`, headers: { "x-user-id": "user-alice" } });
+    return res.json().status;
+  }
+
+  it("gives 401, not 400, to a request with a body and no x-user-id", async () => {
+    const app = setup();
+    const booking = await booked(app);
+    const res = await app.inject({ method: "POST", url: `/bookings/${booking.id}/cancel`, payload: { reason: "x" } });
+
+    expect(res.statusCode).toBe(401);
+    expect(await statusOf(app, booking.id)).toBe("confirmed");
+  });
+
+  it("gives 401, not 400, to a request with a body and an unknown user", async () => {
+    const app = setup();
+    const booking = await booked(app);
+    const res = await app.inject({
+      method: "POST",
+      url: `/bookings/${booking.id}/cancel`,
+      headers: { "x-user-id": "mallory" },
+      payload: { reason: "x" },
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(await statusOf(app, booking.id)).toBe("confirmed");
+  });
+
+  it("still refuses a body from the logged-in owner with 400", async () => {
+    const app = setup();
+    const booking = await booked(app);
+    const res = await app.inject({
+      method: "POST",
+      url: `/bookings/${booking.id}/cancel`,
+      headers: { "x-user-id": "user-alice" },
+      payload: { reason: "x" },
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(await statusOf(app, booking.id)).toBe("confirmed");
+  });
+});
