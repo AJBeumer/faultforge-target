@@ -1,0 +1,22 @@
+name: Task
+description: A change to the booking API.
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+      description: What should change, from a user's point of view.
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
