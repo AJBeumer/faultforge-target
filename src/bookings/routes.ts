@@ -70,7 +70,13 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
     },
   );
 
-  app.get("/bookings", async (request) => listBookings(deps, request.userId));
+  app.get<{ Querystring: { status?: string | string[] } }>("/bookings", async (request, reply) => {
+    const result = listBookings(deps, request.userId, request.query.status);
+    if (result.kind === "invalid_status") {
+      return reply.code(400).send({ error: "invalid_request", message: result.message });
+    }
+    return result.bookings;
+  });
 
   app.get<{ Params: { id: string } }>("/bookings/:id", async (request, reply) => {
     const booking = deps.store.getBooking(request.params.id);
