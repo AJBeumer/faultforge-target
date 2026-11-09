@@ -20,7 +20,7 @@ This stands in for real authentication.
 |---|---|---|
 | `GET` | `/health` | Liveness check. |
 | `POST` | `/bookings` | Requires an `Idempotency-Key` header. `201` on create, `200` with `Idempotent-Replayed: true` on a repeat, `422` if the key was used for a different request. |
-| `GET` | `/bookings` | Lists the caller's own bookings, newest first, including cancelled ones. An empty list if there are none. |
+| `GET` | `/bookings` | Lists the caller's own bookings, newest first, including cancelled ones. An empty list if there are none. Add `?status=confirmed` or `?status=cancelled` to list only that status; any other value, an empty one, or the parameter given twice gets `400`. |
 | `GET` | `/bookings/:id` | Returns the caller's own booking, `404` otherwise. |
 | `POST` | `/bookings/:id/cancel` | Cancels the caller's own booking and returns it. Cancelling twice changes nothing. `404` for a missing booking or someone else's. |
 

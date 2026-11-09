@@ -286,6 +286,90 @@ describe("GET /bookings", () => {
 
     expect(res.statusCode).toBe(401);
   });
+
+  function listByStatus(app: ReturnType<typeof setup>, status: string, userId = "user-alice") {
+    return app.inject({ method: "GET", url: `/bookings?status=${status}`, headers: { "x-user-id": userId } });
+  }
+
+  it("filters to only confirmed bookings, newest first", async () => {
+    const app = setup();
+    const first = await book(app, "a");
+    const second = await book(app, "b");
+    await app.inject({ method: "POST", url: `/bookings/${second.id}/cancel`, headers: { "x-user-id": "user-alice" } });
+
+    const res = await listByStatus(app, "confirmed");
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().map((b: { id: string }) => b.id)).toEqual([first.id]);
+  });
+
+  it("filters to only cancelled bookings, newest first", async () => {
+    const app = setup();
+    const first = await book(app, "a");
+    const second = await book(app, "b");
+    await app.inject({ method: "POST", url: `/bookings/${first.id}/cancel`, headers: { "x-user-id": "user-alice" } });
+    await app.inject({ method: "POST", url: `/bookings/${second.id}/cancel`, headers: { "x-user-id": "user-alice" } });
+
+    const res = await listByStatus(app, "cancelled");
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().map((b: { id: string }) => b.id)).toEqual([second.id, first.id]);
+  });
+
+  it("without status, lists the same as today: all of the caller's bookings, newest first", async () => {
+    const app = setup();
+    const first = await book(app, "a");
+    const second = await book(app, "b");
+    await app.inject({ method: "POST", url: `/bookings/${first.id}/cancel`, headers: { "x-user-id": "user-alice" } });
+
+    const res = await list(app);
+
+    expect(res.json().map((b: { id: string }) => b.id)).toEqual([second.id, first.id]);
+  });
+
+  it("never includes another user's bookings when filtering", async () => {
+    const app = setup();
+    const mine = await book(app, "a");
+    await book(app, "a", "user-bob");
+
+    const res = await listByStatus(app, "confirmed");
+
+    expect(res.json()).toEqual([mine]);
+  });
+
+  it("rejects an unknown status value with 400 naming the allowed values", async () => {
+    const app = setup();
+    const res = await listByStatus(app, "pending");
+
+    expect(res.statusCode).toBe(400);
+    expect(res.json().message).toMatch(/confirmed/);
+    expect(res.json().message).toMatch(/cancelled/);
+  });
+
+  it("rejects an empty status value with 400", async () => {
+    const app = setup();
+    const res = await listByStatus(app, "");
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("rejects status given twice with 400", async () => {
+    const app = setup();
+    const res = await app.inject({
+      method: "GET",
+      url: "/bookings?status=confirmed&status=cancelled",
+      headers: { "x-user-id": "user-alice" },
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("still rejects unauthenticated callers when a status filter is given", async () => {
+    const app = setup();
+    const res = await app.inject({ method: "GET", url: "/bookings?status=confirmed" });
+
+    expect(res.statusCode).toBe(401);
+  });
 });
 
 describe("cancel checks the login before the request body", () => {
