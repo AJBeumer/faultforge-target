@@ -5,7 +5,7 @@ export type ValidationError =
   | { code: "invalid_request"; message: string }
   | { code: "resource_not_found"; message: string };
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const DAY_MS = 86_400_000; // 24 * 60 * 60 * 1000
 
 /** Parses a YYYY-MM-DD string as a UTC date, rejecting impossible dates like 2026-02-30. */
 export function parseDate(value: string): Date | undefined {
