@@ -35,5 +35,5 @@ export class BookingStore {
 }
 
 function idempotencyId(userId: string, key: string): string {
-  return JSON.stringify([userId, key]);
+  return key;
 }
