@@ -15,7 +15,7 @@ const bookingRequestSchema = {
     startDate: { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
     endDate: { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
     guests: { type: "integer", minimum: 1 },
-    note: { type: "string", maxLength: 280 },
+    note: { type: "string", maxLength: 2800 },
   },
 } as const;
 
