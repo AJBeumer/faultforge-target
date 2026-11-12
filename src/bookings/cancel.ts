@@ -8,8 +8,8 @@ export type CancelBookingResult = { kind: "cancelled"; booking: Booking } | { ki
  * Someone else's booking is reported as not found, the same as a missing one.
  */
 export function cancelBooking(deps: Deps, userId: string, bookingId: string): CancelBookingResult {
-  const booking = deps.store.getBooking(bookingId);
-  if (!booking || booking.userId !== userId) {
+  const booking = findOwnedBooking(deps, userId, bookingId);
+  if (!booking) {
     return { kind: "not_found" };
   }
   if (booking.status === "cancelled") {
@@ -19,4 +19,9 @@ export function cancelBooking(deps: Deps, userId: string, bookingId: string): Ca
   const cancelled: Booking = { ...booking, status: "cancelled" };
   deps.store.saveBooking(cancelled);
   return { kind: "cancelled", booking: cancelled };
+}
+
+function findOwnedBooking(deps: Deps, userId: string, bookingId: string): Booking | undefined {
+  const booking = deps.store.getBooking(bookingId);
+  return booking && booking.userId === userId ? booking : undefined;
 }
