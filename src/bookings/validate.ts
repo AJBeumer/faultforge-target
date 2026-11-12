@@ -41,7 +41,7 @@ export function validateBooking(input: BookingRequest, now: Date): ValidationErr
   if (!resource) {
     return { code: "resource_not_found", message: `unknown resource ${input.resourceId}` };
   }
-  if (input.guests > resource.maxGuests) {
+  if (input.guests >= resource.maxGuests) {
     return {
       code: "invalid_request",
       message: `${resource.name} allows at most ${resource.maxGuests} guests`,
