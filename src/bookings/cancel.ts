@@ -6,6 +6,7 @@ export type CancelBookingResult = { kind: "cancelled"; booking: Booking } | { ki
 /**
  * Cancels one of `userId`'s bookings. Cancelling an already cancelled booking changes nothing.
  * Someone else's booking is reported as not found, the same as a missing one.
+ * Returns the booking as stored after the call, so a repeat cancel returns the same booking.
  */
 export function cancelBooking(deps: Deps, userId: string, bookingId: string): CancelBookingResult {
   const booking = deps.store.getBooking(bookingId);
