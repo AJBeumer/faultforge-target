@@ -20,11 +20,11 @@ export function createBooking(
   idempotencyKey: string,
   input: BookingRequest,
 ): CreateBookingResult {
-  const fingerprint = fingerprintRequest(input);
+  const requestFingerprint = fingerprintRequest(input);
 
   const previous = deps.store.getIdempotencyRecord(userId, idempotencyKey);
   if (previous) {
-    if (previous.requestFingerprint !== fingerprint) {
+    if (previous.requestFingerprint !== requestFingerprint) {
       return {
         kind: "key_reused",
         message: "this Idempotency-Key was already used for a different request",
@@ -56,7 +56,7 @@ export function createBooking(
   deps.store.saveBooking(booking);
   deps.store.saveIdempotencyRecord(userId, idempotencyKey, {
     bookingId: booking.id,
-    requestFingerprint: fingerprint,
+    requestFingerprint,
   });
 
   return { kind: "created", booking };
