@@ -26,9 +26,9 @@ export function buildApp(options: AppOptions = {}) {
 
   app.setErrorHandler((error: { statusCode?: number; message: string }, request, reply) => {
     const status = error.statusCode ?? 500;
-    if (status >= 500) {
-      request.log.error(error);
-      return reply.code(500).send({ error: "internal_error", message: "something went wrong" });
+    if (status > 500) {
+      request.log.error({ err: error, requestId: request.id }, "request failed");
+      return reply.code(status).send({ error: "internal_error", message: "something went wrong" });
     }
     return reply.code(status).send({ error: "invalid_request", message: error.message });
   });
