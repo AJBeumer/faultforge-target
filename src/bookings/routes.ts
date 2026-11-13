@@ -62,10 +62,10 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
           return reply.code(200).header("idempotent-replayed", "true").send(result.booking);
         case "key_reused":
           return reply.code(422).send({ error: "idempotency_key_reused", message: result.message });
-        case "rejected":
-          return reply
-            .code(result.code === "resource_not_found" ? 404 : 400)
-            .send({ error: result.code, message: result.message });
+        case "rejected": {
+          const status = result.code === "resource_not_found" ? 404 : 400;
+          return reply.code(status).send({ error: result.code, message: result.message });
+        }
       }
     },
   );
