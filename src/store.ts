@@ -8,17 +8,26 @@ export class BookingStore {
   private readonly bookings = new Map<string, Booking>();
   private readonly idempotency = new Map<string, IdempotencyRecord>();
 
+  /** Each user's list, built on first use and dropped when one of their bookings is saved. */
+  private readonly listsByUser = new Map<string, Booking[]>();
+
   getBooking(id: string): Booking | undefined {
     return this.bookings.get(id);
   }
 
   saveBooking(booking: Booking): void {
     this.bookings.set(booking.id, booking);
+    this.listsByUser.delete(booking.userId);
   }
 
   /** A user's bookings in the order they were created. Saving a booking again keeps its place. */
   listBookings(userId: string): Booking[] {
-    return [...this.bookings.values()].filter((booking) => booking.userId === userId);
+    let list = this.listsByUser.get(userId);
+    if (!list) {
+      list = [...this.bookings.values()].filter((booking) => booking.userId === userId);
+      this.listsByUser.set(userId, list);
+    }
+    return list;
   }
 
   countBookings(): number {
