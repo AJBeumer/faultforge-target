@@ -36,13 +36,17 @@ export function createBooking(
     }
   }
 
+  // Claim the key before validating, so two requests racing on one key can't both get through.
+  const bookingId = deps.nextId();
+  deps.store.saveIdempotencyRecord(userId, idempotencyKey, { bookingId, requestFingerprint: fingerprint });
+
   const error = validateBooking(input, deps.clock.now());
   if (error) {
     return { kind: "rejected", ...error };
   }
 
   const booking: Booking = {
-    id: deps.nextId(),
+    id: bookingId,
     userId,
     resourceId: input.resourceId,
     startDate: input.startDate,
