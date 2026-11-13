@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildApp } from "../src/app.ts";
 import { fixedClock } from "../src/deps.ts";
+import { BookingStore } from "../src/store.ts";
 
 const NOW = "2026-11-02T09:00:00Z";
 
@@ -119,6 +120,20 @@ describe("POST /bookings", () => {
 
     expect(res.statusCode).toBe(404);
     expect(res.json().error).toBe("resource_not_found");
+  });
+
+  it("replays a repeated request: the original booking, marked as a replay, and nothing new stored", async () => {
+    const store = new BookingStore();
+    const app = buildApp({ deps: { store, clock: fixedClock(NOW) } });
+    const first = await post(app, validBooking);
+    const repeat = await post(app, validBooking);
+
+    expect(first.statusCode).toBe(201);
+    expect(first.headers["idempotent-replayed"]).toBeUndefined();
+    expect(repeat.statusCode).toBe(200);
+    expect(repeat.headers["idempotent-replayed"]).toBe("true");
+    expect(repeat.json()).toEqual(first.json());
+    expect(store.countBookings()).toBe(1);
   });
 
   it("refuses to reuse a key for a different request", async () => {
