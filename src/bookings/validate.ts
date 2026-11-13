@@ -16,6 +16,11 @@ export function parseDate(value: string): Date | undefined {
   return date;
 }
 
+/** Midnight at the start of the calendar day that `now` falls on. */
+export function startOfDay(now: Date): number {
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+}
+
 /** Business rules that JSON schema cannot express. Shape is checked by the route schema. */
 export function validateBooking(input: BookingRequest, now: Date): ValidationError | undefined {
   const start = parseDate(input.startDate);
@@ -24,8 +29,7 @@ export function validateBooking(input: BookingRequest, now: Date): ValidationErr
     return { code: "invalid_request", message: "startDate and endDate must be valid dates" };
   }
 
-  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  if (start.getTime() < today) {
+  if (start.getTime() < startOfDay(now)) {
     return { code: "invalid_request", message: "startDate must not be in the past" };
   }
 
