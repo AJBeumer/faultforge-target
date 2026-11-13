@@ -57,9 +57,8 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
 
       switch (result.kind) {
         case "created":
-          return reply.code(201).send(result.booking);
         case "replayed":
-          return reply.code(200).header("idempotent-replayed", "true").send(result.booking);
+          return reply.code(201).send(result.booking);
         case "key_reused":
           return reply.code(422).send({ error: "idempotency_key_reused", message: result.message });
         case "rejected":
