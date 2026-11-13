@@ -93,6 +93,12 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
     if (!isEmptyBody(request.body)) {
       return reply.code(400).send({ error: "invalid_request", message: "this request takes no body" });
     }
+    // A booking that has already started can no longer be cancelled.
+    const existing = deps.store.getBooking(request.params.id);
+    const today = deps.clock.now().toISOString().slice(0, 10);
+    if (existing && existing.status === "confirmed" && existing.startDate <= today) {
+      return reply.code(409).send({ error: "already_started", message: "this booking has already started" });
+    }
     const result = cancelBooking(deps, request.userId, request.params.id);
     if (result.kind === "not_found") {
       return notFound(reply);
