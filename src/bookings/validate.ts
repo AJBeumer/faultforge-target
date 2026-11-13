@@ -29,7 +29,7 @@ export function validateBooking(input: BookingRequest, now: Date): ValidationErr
     return { code: "invalid_request", message: "startDate must not be in the past" };
   }
 
-  const nights = (end.getTime() - start.getTime()) / DAY_MS;
+  const nights = nightsBetween(start, end);
   if (nights < 1) {
     return { code: "invalid_request", message: "endDate must be after startDate" };
   }
@@ -49,4 +49,9 @@ export function validateBooking(input: BookingRequest, now: Date): ValidationErr
   }
 
   return undefined;
+}
+
+/** Whole nights from `start` to `end`, both UTC midnights. */
+function nightsBetween(start: Date, end: Date): number {
+  return (end.getTime() - start.getTime()) / DAY_MS;
 }
