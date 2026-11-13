@@ -20,6 +20,12 @@ export function createBooking(
   idempotencyKey: string,
   input: BookingRequest,
 ): CreateBookingResult {
+  // Validate first: a request that can't be booked is refused before the idempotency store is read.
+  const error = validateBooking(input, deps.clock.now());
+  if (error) {
+    return { kind: "rejected", ...error };
+  }
+
   const fingerprint = fingerprintRequest(input);
 
   const previous = deps.store.getIdempotencyRecord(userId, idempotencyKey);
@@ -34,11 +40,6 @@ export function createBooking(
     if (original) {
       return { kind: "replayed", booking: original };
     }
-  }
-
-  const error = validateBooking(input, deps.clock.now());
-  if (error) {
-    return { kind: "rejected", ...error };
   }
 
   const booking: Booking = {
