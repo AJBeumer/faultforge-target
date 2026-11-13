@@ -9,8 +9,9 @@ export interface AppOptions {
 
 export function buildApp(options: AppOptions = {}) {
   const deps = createDeps(options.deps);
-  // Fastify strips unknown body fields by default; reject them instead.
-  const app = Fastify({ ajv: { customOptions: { removeAdditional: false } }, ...options.fastify });
+  // Fastify strips unknown body fields and coerces types by default; reject both instead, so "2" is not
+  // taken for 2.
+  const app = Fastify({ ajv: { customOptions: { removeAdditional: false, coerceTypes: false } }, ...options.fastify });
 
   // Many clients send `Content-Type: application/json` on every request, even without a body. Treat
   // a body of zero length as no body, so a route that takes none still works and authentication still

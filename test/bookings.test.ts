@@ -91,6 +91,28 @@ describe("POST /bookings", () => {
     expect(res.statusCode).toBe(201);
   });
 
+  it("refuses a value of the wrong type instead of converting it", async () => {
+    const app = setup();
+    const res = await post(app, { ...validBooking, guests: "2" });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toBe("invalid_request");
+  });
+
+  it("answers an unknown or missing user with 401 before looking at the body", async () => {
+    const app = setup();
+    const unknown = await post(app, { guests: "many" }, { "x-user-id": "mallory" });
+    const missing = await app.inject({
+      method: "POST",
+      url: "/bookings",
+      headers: { "idempotency-key": "key-1" },
+      payload: { guests: "many" },
+    });
+
+    expect(unknown.statusCode).toBe(401);
+    expect(missing.statusCode).toBe(401);
+  });
+
   it("returns 404 for an unknown resource", async () => {
     const app = setup();
     const res = await post(app, { ...validBooking, resourceId: "room-999" });
