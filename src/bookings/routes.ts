@@ -87,6 +87,22 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
     return booking;
   });
 
+  // A short summary of a booking for the guest's records.
+  app.get<{ Params: { id: string } }>("/bookings/:id/receipt", async (request, reply) => {
+    const booking = deps.store.getBooking(request.params.id);
+    if (!booking) {
+      return notFound(reply);
+    }
+    return {
+      bookingId: booking.id,
+      resourceId: booking.resourceId,
+      from: booking.startDate,
+      to: booking.endDate,
+      guests: booking.guests,
+      status: booking.status,
+    };
+  });
+
   app.post<{ Params: { id: string } }>("/bookings/:id/cancel", async (request, reply) => {
     // Cancelling takes no input, so any field in a body is unknown. Checked here rather than
     // with a body schema, which would also refuse bodyless requests and run before authentication.
