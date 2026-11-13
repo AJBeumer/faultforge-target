@@ -10,8 +10,11 @@ export const RESOURCES = [
 
 export const MAX_NIGHTS = 14;
 
+const KNOWN_USERS = new Set(USERS.map((user) => user.toLowerCase()));
+
+/** Header values may arrive in any case from some clients, so compare without case. */
 export function isKnownUser(id: string): boolean {
-  return (USERS as readonly string[]).includes(id);
+  return KNOWN_USERS.has(id.toLowerCase());
 }
 
 export function findResource(id: string) {
