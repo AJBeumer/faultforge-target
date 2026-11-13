@@ -64,5 +64,5 @@ export function createBooking(
 
 /** Stable representation of the fields that define a booking request. */
 function fingerprintRequest(input: BookingRequest): string {
-  return JSON.stringify([input.resourceId, input.startDate, input.endDate, input.guests, input.note ?? null]);
+  return JSON.stringify(input);
 }
