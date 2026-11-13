@@ -47,7 +47,9 @@ async function authenticate(request: FastifyRequest, reply: FastifyReply) {
 
 export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
   app.decorateRequest("userId", "");
-  app.addHook("preHandler", authenticate);
+  // onRequest, before the body is parsed or validated: a caller who isn't a known user gets 401 and
+  // learns nothing about the body rules.
+  app.addHook("onRequest", authenticate);
 
   app.post<{ Body: BookingRequest; Headers: { "idempotency-key": string } }>(
     "/bookings",
