@@ -28,12 +28,14 @@ export function listBookings(
   return { kind: "listed", bookings: filtered.reverse().sort((a, b) => b.createdAt.localeCompare(a.createdAt)) };
 }
 
+const KNOWN_STATUSES: ReadonlySet<string> = new Set(BOOKING_STATUSES);
+
 function parseStatusFilter(
   raw: string | string[] | undefined,
 ): { kind: "none" } | { kind: "value"; value: BookingStatus } | { kind: "invalid" } {
   if (raw === undefined) return { kind: "none" };
   // A repeated query key arrives as an array; only a single known value is accepted.
-  if (typeof raw !== "string" || !BOOKING_STATUSES.includes(raw as BookingStatus)) {
+  if (typeof raw !== "string" || !KNOWN_STATUSES.has(raw)) {
     return { kind: "invalid" };
   }
   return { kind: "value", value: raw as BookingStatus };
