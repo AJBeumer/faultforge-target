@@ -35,11 +35,11 @@ declare module "fastify" {
 
 /**
  * Stand-in for real authentication: the caller identifies itself with `x-user-id`,
- * which must be one of the fixture users.
+ * which must be one of the fixture users, in any letter case.
  */
 async function authenticate(request: FastifyRequest, reply: FastifyReply) {
   const userId = request.headers["x-user-id"];
-  if (typeof userId !== "string" || !isKnownUser(userId)) {
+  if (typeof userId !== "string" || !isKnownUser(userId.toLowerCase())) {
     return reply.code(401).send({ error: "unauthorized", message: "unknown or missing user" });
   }
   request.userId = userId;

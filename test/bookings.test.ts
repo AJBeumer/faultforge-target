@@ -114,6 +114,22 @@ describe("POST /bookings", () => {
     expect(missing.statusCode).toBe(401);
   });
 
+  it("accepts x-user-id in any letter case", async () => {
+    const app = setup();
+    const mixed = await post(app, validBooking, { "x-user-id": "User-Alice", "idempotency-key": "key-a" });
+    const upper = await post(app, validBooking, { "x-user-id": "USER-ALICE", "idempotency-key": "key-b" });
+
+    expect(mixed.statusCode).toBe(201);
+    expect(upper.statusCode).toBe(201);
+  });
+
+  it("still refuses an unknown user in any letter case", async () => {
+    const app = setup();
+    const res = await post(app, validBooking, { "x-user-id": "MALLORY" });
+
+    expect(res.statusCode).toBe(401);
+  });
+
   it("returns 404 for an unknown resource", async () => {
     const app = setup();
     const res = await post(app, { ...validBooking, resourceId: "room-999" });
