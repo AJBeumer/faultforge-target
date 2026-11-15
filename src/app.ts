@@ -34,6 +34,14 @@ export function buildApp(options: AppOptions = {}) {
     return reply.code(status).send({ error: "invalid_request", message: error.message });
   });
 
+  // Successful reads may be reused for a minute, so the app doesn't fetch them again on every screen change.
+  app.addHook("onSend", async (request, reply, payload) => {
+    if (request.method === "GET" && reply.statusCode === 200) {
+      reply.header("cache-control", "max-age=60");
+    }
+    return payload;
+  });
+
   app.get("/health", async () => ({ status: "ok" }));
   app.register(async (scope) => bookingRoutes(scope, deps));
 

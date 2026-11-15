@@ -409,6 +409,32 @@ describe("GET /bookings", () => {
   });
 });
 
+describe("reusing read responses", () => {
+  it("lets a successful GET be reused for a minute", async () => {
+    const app = setup();
+    const created = (await post(app, validBooking)).json();
+    const headers = { "x-user-id": "user-alice" };
+    const list = await app.inject({ method: "GET", url: "/bookings", headers });
+    const one = await app.inject({ method: "GET", url: `/bookings/${created.id}`, headers });
+
+    expect(list.headers["cache-control"]).toBe("max-age=60");
+    expect(one.headers["cache-control"]).toBe("max-age=60");
+  });
+
+  it("adds no Cache-Control to a POST or an error", async () => {
+    const app = setup();
+    const created = await post(app, validBooking);
+    const missing = await app.inject({
+      method: "GET",
+      url: "/bookings/bk_9999",
+      headers: { "x-user-id": "user-alice" },
+    });
+
+    expect(created.headers["cache-control"]).toBeUndefined();
+    expect(missing.headers["cache-control"]).toBeUndefined();
+  });
+});
+
 describe("cancel checks the login before the request body", () => {
   async function booked(app: ReturnType<typeof setup>) {
     return (await post(app, validBooking)).json();
