@@ -401,6 +401,16 @@ describe("GET /bookings", () => {
     expect(res.statusCode).toBe(400);
   });
 
+  it("sends the total in X-Total-Count", async () => {
+    const app = setup();
+    await book(app, "a");
+    await book(app, "b");
+
+    const res = await list(app);
+
+    expect(res.headers["x-total-count"]).toBe("2");
+  });
+
   it("still rejects unauthenticated callers when a status filter is given", async () => {
     const app = setup();
     const res = await app.inject({ method: "GET", url: "/bookings?status=confirmed" });

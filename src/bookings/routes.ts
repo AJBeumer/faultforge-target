@@ -77,6 +77,8 @@ export async function bookingRoutes(app: FastifyInstance, deps: Deps) {
     if (result.kind === "invalid_status") {
       return reply.code(400).send({ error: "invalid_request", message: result.message });
     }
+    // The total, for the count the app shows next to the list; paging will rely on it too.
+    reply.header("x-total-count", String(deps.store.countBookings()));
     return result.bookings;
   });
 
