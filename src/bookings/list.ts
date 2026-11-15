@@ -32,9 +32,10 @@ function parseStatusFilter(
   raw: string | string[] | undefined,
 ): { kind: "none" } | { kind: "value"; value: BookingStatus } | { kind: "invalid" } {
   if (raw === undefined) return { kind: "none" };
-  // A repeated query key arrives as an array; only a single known value is accepted.
-  if (typeof raw !== "string" || !BOOKING_STATUSES.includes(raw as BookingStatus)) {
+  // A repeated query key arrives as an array; only a single known value is accepted, in any letter case.
+  const value = typeof raw === "string" ? raw.toLowerCase() : undefined;
+  if (value === undefined || !BOOKING_STATUSES.includes(value as BookingStatus)) {
     return { kind: "invalid" };
   }
-  return { kind: "value", value: raw as BookingStatus };
+  return { kind: "value", value: value as BookingStatus };
 }

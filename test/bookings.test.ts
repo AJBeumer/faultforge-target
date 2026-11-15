@@ -401,6 +401,20 @@ describe("GET /bookings", () => {
     expect(res.statusCode).toBe(400);
   });
 
+  it("accepts the status in any letter case", async () => {
+    const app = setup();
+    const first = await book(app, "a");
+    const second = await book(app, "b");
+    await app.inject({ method: "POST", url: `/bookings/${second.id}/cancel`, headers: { "x-user-id": "user-alice" } });
+
+    const confirmed = await listByStatus(app, "Confirmed");
+    const cancelled = await listByStatus(app, "CANCELLED");
+
+    expect(confirmed.statusCode).toBe(200);
+    expect(confirmed.json().map((b: { id: string }) => b.id)).toEqual([first.id]);
+    expect(cancelled.json().map((b: { id: string }) => b.id)).toEqual([second.id]);
+  });
+
   it("still rejects unauthenticated callers when a status filter is given", async () => {
     const app = setup();
     const res = await app.inject({ method: "GET", url: "/bookings?status=confirmed" });
