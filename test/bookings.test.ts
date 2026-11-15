@@ -136,6 +136,23 @@ describe("POST /bookings", () => {
     expect(store.countBookings()).toBe(1);
   });
 
+  it("points to the new booking in a Location header, also on a replay", async () => {
+    const app = setup();
+    const first = await post(app, validBooking);
+    const repeat = await post(app, validBooking);
+
+    expect(first.headers.location).toBe(`/bookings/${first.json().id}`);
+    expect(repeat.headers.location).toBe(first.headers.location);
+  });
+
+  it("sends no Location with an error", async () => {
+    const app = setup();
+    const res = await post(app, { ...validBooking, guests: 0 });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.headers.location).toBeUndefined();
+  });
+
   it("refuses to reuse a key for a different request", async () => {
     const app = setup();
     await post(app, validBooking);
