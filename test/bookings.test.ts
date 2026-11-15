@@ -401,6 +401,16 @@ describe("GET /bookings", () => {
     expect(res.statusCode).toBe(400);
   });
 
+  it("leaves the note out of the list", async () => {
+    const app = setup();
+    await post(app, { ...validBooking, note: "late arrival" });
+
+    const res = await list(app);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()[0]).not.toHaveProperty("note");
+  });
+
   it("still rejects unauthenticated callers when a status filter is given", async () => {
     const app = setup();
     const res = await app.inject({ method: "GET", url: "/bookings?status=confirmed" });

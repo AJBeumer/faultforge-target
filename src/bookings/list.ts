@@ -25,6 +25,8 @@ export function listBookings(
 
   const created = deps.store.listBookings(userId);
   const filtered = status.kind === "value" ? created.filter((booking) => booking.status === status.value) : created;
+  // The list screen never shows notes, which can be long: leave them out of the list.
+  for (const booking of filtered) booking.note = undefined;
   return { kind: "listed", bookings: filtered.reverse().sort((a, b) => b.createdAt.localeCompare(a.createdAt)) };
 }
 
